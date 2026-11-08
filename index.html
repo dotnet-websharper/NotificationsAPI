@@ -1,23 +1,36 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Notifications API Example</title>
+    <title>WebSharper Notifications API Demo</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%234f46e5'/%3E%3Cpath d='M8 3a3 3 0 00-3 3v2.5L4 10h8l-1-1.5V6a3 3 0 00-3-3z' fill='white'/%3E%3Ccircle cx='8' cy='11.5' r='1' fill='white'/%3E%3C/svg%3E" />
     <link rel="stylesheet" type="text/css" href="Content/WebSharper.Notifications.Sample.css" />
-    <style>
-        /* Don't show the not-yet-loaded templates */
-        [ws-template], [ws-children-template] { display: none; }
-    </style>
+    <link rel="stylesheet" type="text/css" href="site.css" />
     <script type="module" src="Content/WebSharper.Notifications.Sample.head.js"></script>
 </head>
 <body>
-    <h1>Notifications API Demo</h1>
-    <div id="main" ws-children-template="Main">
-        <button ws-onclick="requestNotification">Show Notification</button>
-        <p id="status">${status}</p>
-        <p>If there is no prompted permission request for notifications, please allow notifications manually in your browser settings.</p>
-    </div>
+    <main class="page">
+        <header class="hero">
+            <h1>Notifications API Demo</h1>
+            <p class="lede">
+                Request permission and show a desktop notification with the
+                <a href="https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API" target="_blank" rel="noreferrer">Notifications API</a>.
+                The page must run in a secure context (HTTPS or localhost).
+            </p>
+        </header>
+
+        <section class="card">
+            <h2>Browser notification</h2>
+            <p class="hint">Requests permission and shows a notification with the <code>Notification</code> constructor.</p>
+            <div class="actions">
+                <button class="btn btn-primary" ws-onclick="requestNotification">Show notification</button>
+            </div>
+            <p class="status" role="status">${status}</p>
+            <p class="permission">Permission: <strong>${permission}</strong></p>
+            <p class="hint">If the permission prompt does not appear, allow notifications for this site in your browser settings.</p>
+        </section>
+    </main>
     <script type="module" src="Content/WebSharper.Notifications.Sample.min.js"></script>
 </body>
 </html>
