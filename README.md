@@ -1,131 +1,143 @@
-# WebSharper Notifications API Binding
+# WebSharper.Notifications
 
-This repository provides an F# [WebSharper](https://websharper.com/) binding for the [Notifications API](https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API), enabling seamless integration of browser notifications into WebSharper applications.
+[![NuGet](https://img.shields.io/badge/nuget-not%20published-lightgrey)](https://github.com/dotnet-websharper/NotificationsAPI)
 
-## Repository Structure
+WebSharper bindings for the [Notifications API](https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API) —
+showing desktop notifications from F# and C# web apps.
 
-The repository consists of two main projects:
+The Notifications API is only available in [secure contexts](https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Secure_Contexts)
+(HTTPS or localhost), and the browser asks for permission before showing a notification.
 
-1. **Binding Project**:
+This repository contains:
 
-   - Contains the F# WebSharper binding for the Notifications API.
+| Project | Purpose |
+| --- | --- |
+| `WebSharper.Notifications` | The binding: WIG definitions for `Notification`, `NotificationOptions`, `NotificationAction`, `NotificationEvent`, and the `NotificationPermission` / `NotificationDir` enums. |
+| `WebSharper.Notifications.Sample` | An ASP.NET Core SPA that requests permission and shows a notification. |
 
-2. **Sample Project**:
-   - Demonstrates how to use the Notifications API with WebSharper syntax.
-   - Includes a GitHub Pages demo: [View Demo](https://dotnet-websharper.github.io/NotificationsAPI/).
+## Live demos
+
+**Try it live:** [Open the sample in your browser](https://dotnet-websharper.github.io/NotificationsAPI/)
+
+![Notifications API sample](docs/sample.png)
+
+The sample doubles as the binding's test case: it calls `Notification.requestPermission()` and shows a notification
+when permission is granted.
+
+- **Sample (this repository):** <https://dotnet-websharper.github.io/NotificationsAPI/>
+- **Source repository:** <https://github.com/dotnet-websharper/NotificationsAPI>
+- **WebSharper bindings:** <https://websharper.com/bindings>
 
 ## Features
 
-- WebSharper bindings for the Notifications API.
-- Simple API for displaying desktop notifications.
-- Example usage for enhancing user engagement.
-- Hosted demo to explore API functionality.
+- `Notification.requestPermission()` and `Notification.permission`.
+- `Notification` with `title`, `body`, `icon`, `badge`, `image`, `tag`, `data`, `dir`, `lang`, `timestamp`, `vibrate`, `renotify`, `requireInteraction`, and `silent`.
+- `NotificationOptions` and `NotificationAction` (`action`, `title`, `icon`).
+- `NotificationEvent` with the `notification` and `action` fields.
+- `onclick`, `onclose`, `onerror`, and `onshow` handlers (plus the `OnClick` / `OnClose` / `OnError` / `OnShow` aliases).
 
-## Installation and Building
+## Installation
 
-### Prerequisites
+The binding is not currently published to NuGet. Reference the projects from source:
 
-- [.NET SDK](https://dotnet.microsoft.com/download) installed on your machine.
+```bash
+git clone https://github.com/dotnet-websharper/NotificationsAPI.git
+```
 
-### Steps
+```xml
+<ItemGroup>
+  <ProjectReference Include="path/to/WebSharper.Notifications/WebSharper.Notifications.fsproj" />
+</ItemGroup>
+```
 
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/dotnet-websharper/Notifications.git
-   cd Notifications
-   ```
-
-2. Build the Binding Project:
-
-   ```bash
-   dotnet build WebSharper.Notifications/WebSharper.Notifications.fsproj
-   ```
-
-3. Build and Run the Sample Project:
-
-   ```bash
-   cd WebSharper.Notifications.Sample
-   dotnet build
-   dotnet run
-   ```
-
-4. Open the hosted demo to see the Sample project in action:
-   [https://dotnet-websharper.github.io/NotificationsAPI/](https://dotnet-websharper.github.io/NotificationsAPI/)
-
-## Why Use the Notifications API
-
-The Notifications API allows web applications to send notifications to users. Key benefits include:
-
-1. **Improved User Engagement**: Notify users even when they are not actively using the application.
-2. **Timely Alerts**: Inform users of important events in real time.
-3. **Native Browser Integration**: Works with system-level notifications for a seamless experience.
-4. **Customizable Messages**: Supports different types of messages, actions, and icons.
-
-**Note:** If there is no prompted permission request for notifications, please allow notifications manually in your browser settings.
-
-Integrating the Notifications API with WebSharper allows developers to create interactive and user-friendly web applications in F#.
-
-## How to Use the Notifications API
-
-### Example Usage
-
-Below is an example of how to use the Notifications API in a WebSharper project:
+## Usage
 
 ```fsharp
-namespace WebSharper.Notifications.Sample
+namespace WebSharper.Notifications.Demo
 
 open WebSharper
 open WebSharper.JavaScript
-open WebSharper.UI
-open WebSharper.UI.Client
-open WebSharper.UI.Templating
-open WebSharper.UI.Notation
 open WebSharper.Notifications
 
 [<JavaScript>]
-module Client =
-    // The templates are loaded from the DOM, so you just can edit index.html
-    // and refresh your browser, no need to recompile unless you add or remove holes.
-    type IndexTemplate = Template<"wwwroot/index.html", ClientLoad.FromDocument>
-
-    let status = Var.Create ""
-
-    // Function to request notification permission and send a notification if granted
-    let requestNotification() =
+module Demo =
+    let requestNotification () =
         promise {
-            try
-                // Request notification permission from the user
-                let! permission = Notification.RequestPermission()
-                if permission = "granted" then
-                    status := "Notifications sent!"
-                    // Create and display a new notification
-                    let _ = new Notification("Hello! Notifications are enabled.", NotificationOptions(
-                        Body = "This is a test notification."
-                    ))
-                    return ()
-                else
-                    status := "Notifications denied!"
-                    return ()
-            with error ->
-                status := $"{error.Message}"
-                return ()
+            let! permission = Notification.RequestPermission()
+            if permission = "granted" then
+                let _ = new Notification("Hello! Notifications are enabled.", NotificationOptions(
+                    Body = "This is a test notification."
+                ))
+                Console.Log("Notification sent.")
+            else
+                Console.Log("Notifications denied.")
         }
-
-    [<SPAEntryPoint>]
-    let Main () =
-        // Initialize the UI template and bind variables to UI elements
-        IndexTemplate.Main()
-            .status(status.View)
-            .requestNotification(fun _ ->
-                async {
-                    do! requestNotification().AsAsync()
-                } |> Async.Start
-            )
-            .Doc()
-        |> Doc.RunById "main"
 ```
 
-This example demonstrates how to request permission and display notifications dynamically.
+`Notification.RequestPermission()` returns a `Promise<string>`. Compare the result to `"granted"`, `"denied"`, or
+`"default"`.
 
-For a complete implementation, refer to the [Sample Project](https://dotnet-websharper.github.io/NotificationsAPI/).
+## Running the sample
+
+Build the sample in Release and serve its static output:
+
+```bash
+dotnet build WebSharper.Notifications.Sample/WebSharper.Notifications.Sample.fsproj -c Release
+python3 -m http.server -d WebSharper.Notifications.Sample/wwwroot 8099
+```
+
+Open <http://localhost:8099/> and click **Show notification**. Grant the permission when the browser prompts for it.
+
+Alternatively, run the ASP.NET Core host:
+
+```bash
+dotnet run --project WebSharper.Notifications.Sample
+```
+
+## Building from source
+
+### Prerequisites
+
+- [.NET SDK 10](https://dotnet.microsoft.com/download) or later.
+
+### Build
+
+```bash
+dotnet build WebSharper.Notifications.sln -c Release
+```
+
+The binding projects target `netstandard2.0`; the sample targets `net10.0`.
+
+## Deployment
+
+Pushing to `main` triggers `.github/workflows/ghpages.yml`, which builds the sample in Release and publishes
+`WebSharper.Notifications.Sample/wwwroot` to the `gh-pages` branch.
+
+## Repository layout
+
+```
+WebSharper.Notifications/              # binding (WIG definitions)
+  Main.fs
+WebSharper.Notifications.Sample/       # ASP.NET Core SPA demo
+  Client.fs
+  Startup.fs
+  wwwroot/
+    index.html
+    site.css
+.github/workflows/ghpages.yml          # build + deploy the sample to GitHub Pages
+```
+
+## Notes on the API
+
+- **Secure context:** the Notifications API is only exposed in secure contexts. Serve the page over HTTPS or from
+  localhost.
+- **Permissions:** request permission from a user gesture. If the prompt does not appear, allow notifications for
+  the site in the browser settings.
+- **Notification actions:** `NotificationOptions.actions` and `NotificationEvent` are not available on every
+  platform. The binding keeps the types; handle missing support gracefully.
+- **Service worker:** `ServiceWorkerRegistration.showNotification()` is the recommended path for persistent
+  notifications; the binding covers the `Notification` constructor used here.
+
+## License
+
+Apache 2.0 — see [LICENSE.md](LICENSE.md).

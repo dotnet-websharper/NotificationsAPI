@@ -3,46 +3,41 @@ namespace WebSharper.Notifications.Sample
 open WebSharper
 open WebSharper.JavaScript
 open WebSharper.UI
+open WebSharper.UI.Notation
 open WebSharper.UI.Client
 open WebSharper.UI.Templating
-open WebSharper.UI.Notation
 open WebSharper.Notifications
 
-[<JavaScript>] 
+[<JavaScript>]
 module Client =
-    // The templates are loaded from the DOM, so you just can edit index.html
-    // and refresh your browser, no need to recompile unless you add or remove holes.
+    // The template is loaded from the DOM, so editing index.html and refreshing
+    // the browser is enough; a rebuild is only needed when holes change.
     type IndexTemplate = Template<"wwwroot/index.html", ClientLoad.FromDocument>
 
-    let status = Var.Create ""
-    
-    let requestNotification() = 
+    let status = Var.Create "Ready to request notification permission."
+    let permission = Var.Create "default"
+
+    let requestNotification () =
         promise {
             try
-                let! permission = Notification.RequestPermission()
-                if permission = "granted" then
-                    status := "Notifications sent!"
+                let! result = Notification.RequestPermission()
+                permission := result
+                if result = "granted" then
+                    status := "Notification sent."
                     let _ = new Notification("Hello! Notifications are enabled.", NotificationOptions(
                         Body = "This is a test notification."
                     ))
-                    return ()
-                else 
-                    status := "Notifications denied!"
-                    return ()
+                    ()
+                else
+                    status := "Notifications denied."
             with error ->
-                status := $"{error.Message}"
-                return ()
+                status := $"Error: {error.Message}"
         }
 
     [<SPAEntryPoint>]
     let Main () =
-
-        IndexTemplate.Main()
-            .status(status.View)
-            .requestNotification(fun _ -> 
-                async {
-                    do! requestNotification().AsAsync()
-                } |> Async.Start
-            )
-            .Doc()
-        |> Doc.RunById "main"
+        IndexTemplate()
+            .requestNotification(fun _ -> requestNotification () |> ignore)
+            .status(status.V)
+            .permission(permission.V)
+            .Bind()
